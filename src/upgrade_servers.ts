@@ -3,10 +3,22 @@ import { error } from "./utils";
 
 /** @param {NS} ns */
 export async function main(ns: NS) {
-    const args = ns.flags([['info', false], ['buy', false], ['n', 0]])
+    const args = ns.flags([['info', false], ['buy', false], ['r', 32]])
     const servers = ns.getPurchasedServers()
     if (!args.buy && servers.length === 0 || servers.every(server => ns.getServerMaxRam(server) === ns.getPurchasedServerMaxRam())) {
         ns.tprint(error('No purchased servers to upgrade.'))
+        return
+    }
+
+    if (args.buy && !args.info) {
+        if (servers.length === ns.getPurchasedServerLimit()) {
+            ns.tprint(error('Can\'t buy. You already have maximum amount of servers.'))
+            return
+        }
+
+        for (let i = servers.length; i < ns.getPurchasedServerLimit(); i++)
+            ns.purchaseServer(`pserv-${i}`, args.r as number)
+
         return
     }
 
