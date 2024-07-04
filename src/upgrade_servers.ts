@@ -10,7 +10,17 @@ export async function main(ns: NS) {
         return
     }
 
-    if (args.buy && !args.info) {
+    if (args.buy) {
+        if (args.info) {
+            ns.tprint(`
+
+        Cost of buying 1 server: ${ns.getPurchasedServerCost(args.r as number)}
+        Cost of buying all servers: ${ns.getPurchasedServerCost(args.r as number) * (ns.getPurchasedServerLimit() - servers.length)}
+        RAM on servers: ${ns.formatRam(args.r as number)}`)
+
+            return
+        }
+
         if (servers.length === ns.getPurchasedServerLimit()) {
             ns.tprint(error('Can\'t buy. You already have maximum amount of servers.'))
             return
