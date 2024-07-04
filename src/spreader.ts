@@ -58,7 +58,7 @@ function infolog(ns: NS, data: string) {
  * @param {NS} ns
  * @param {string[]} neighbours
  * @param {string} targetHost
- * @param {boolean} noLaunch
+ * @param {ThreadsDistribution} baseThreads
  */
 async function hwgw(
     ns: NS,
@@ -250,29 +250,42 @@ export async function main(ns: NS) {
         minRam: 4,
     }
 
-    if (ns.args[0] === '-d' && ns.args[1]) {
-        if (!Number.isInteger(ns.args[1])) {
-            ns.tprint(`Invalid second argument: should be integer, but got '${ns.args[1]}' with type '${typeof ns.args[1]}'`)
-            return
-        }
-        args.depth = ns.args[1] as number
-        ns.args.shift()
-        ns.args.shift()
+    const flags = ns.flags([['d', 3], ['r', 4], ['target', ''], ['deplete', false]])
+
+    if (flags.d) {
+        // if (!Number.isInteger(ns.args[1])) {
+        //     ns.tprint(`Invalid second argument: should be integer, but got '${ns.args[1]}' with type '${typeof ns.args[1]}'`)
+        //     return
+        // }
+        args.depth = flags.d as number
+        // ns.args.shift()
+        // ns.args.shift()
     }
 
-    if (ns.args[0] === '-r' && ns.args[1]) {
-        if (!Number.isInteger(ns.args[1])) {
-            ns.tprint(`Invalid second argument: should be integer, but got '${ns.args[1]}' with type '${typeof ns.args[1]}'`)
-            return
-        }
-        args.minRam = Math.max(ns.args[1] as number, 4)
-        ns.args.shift();
-        ns.args.shift()
+    if (flags.r) {
+        // if (!Number.isInteger(ns.args[1])) {
+        //     ns.tprint(`Invalid second argument: should be integer, but got '${ns.args[1]}' with type '${typeof ns.args[1]}'`)
+        //     return
+        // }
+        args.minRam = Math.max(flags.r as number, 4)
+        // ns.args.shift()
+        // ns.args.shift()
     }
 
-    if (ns.serverExists(ns.args[0] as (string | undefined) || '')) {
-        args.targetHost = ns.args[0] as string
-        ns.args.shift()
+    if (flags.target) {
+        if (ns.serverExists(flags.target as string)) {
+            args.targetHost = flags.target as string
+            // ns.args.shift()
+        }
+        else {
+            ns.tprint(`ERROR: specified target not found.`)
+            return
+        }
+    }
+
+    if (flags.deplete && !(Number(!!flags.deplete) ^ Number(!!flags.target))) {
+        ns.tprint(`ERROR: --deplete requires target.`)
+        return
     }
 
     ns.enableLog('ALL')
@@ -312,6 +325,32 @@ export async function main(ns: NS) {
         filenames.forEach(function (filename) { ns.scp(filename, host, sourceHost) })
 
     ns.write('log.txt', '', 'w')
+    ns.write('infolog.txt', '', 'w')
+
+    if (flags.deplete) {
+        const threads: ThreadsDistribution = {
+            hack: 1,
+            weaken1: 1,
+            grow: 0,
+            weaken2: 0
+        }
+
+        const weakenEffect = ns.weakenAnalyze(1)
+        const hackSecInc = ns.hackAnalyzeSecurity(1)
+        threads.hack = Math.floor(weakenEffect / hackSecInc)
+
+        const host = neighbours.toSorted((a, b) => getServerRamAvailable(ns, b) - getServerRamAvailable(ns, a))[0]
+        const ramReq = getBatchRamRequirements(ns, threads)
+        const k = getMaxThreadsCount(ns, host, ramReq)
+        threads.hack *= k
+        threads.weaken1 *= k
+
+        while (ns.getServerMoneyAvailable(targetHost) > 0)
+            await hwgw(ns, [host], targetHost, threads)
+
+        ns.tprint(`Successfully depleted target host '${targetHost}' money reserves.`)
+        return
+    }
 
     const ramLimit = 2048
     const targetHackAmount = 0.9
