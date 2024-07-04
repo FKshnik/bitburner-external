@@ -22,11 +22,16 @@ export function error(data: string): string {
  */
 export function getNeighbours(ns: NS, depth: number): string[] {
     const levels = [ns.scan()]
+    const scanned: Record<string, boolean> = {}
 
     for (let i = 1; i < depth; i++) {
         levels.push([])
         for (const server of levels[i - 1]) {
+            if (scanned[server])
+                continue
+
             levels[i].push(...ns.scan(server))
+            scanned[server] = true
         }
     }
 
