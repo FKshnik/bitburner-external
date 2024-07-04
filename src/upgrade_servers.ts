@@ -5,7 +5,7 @@ import { error } from "./utils";
 export async function main(ns: NS) {
     const args = ns.flags([['info', false], ['buy', false], ['r', 32]])
     const servers = ns.getPurchasedServers()
-    if (!args.buy && servers.length === 0 || servers.every(server => ns.getServerMaxRam(server) === ns.getPurchasedServerMaxRam())) {
+    if (!args.buy && (servers.length === 0 || servers.every(server => ns.getServerMaxRam(server) === ns.getPurchasedServerMaxRam()))) {
         ns.tprint(error('No purchased servers to upgrade.'))
         return
     }
