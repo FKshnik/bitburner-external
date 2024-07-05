@@ -184,7 +184,7 @@ const infiltrationGames = [
         },
         play: function (screen: Element) {
             const data = getLines(getEl(screen, "h4"));
-            //console.log('h4 for slash: ', data)
+            // console.log('h4 for slash: ', data)
 
             if ("attack" === state.game.data) {
                 pressKey(" ");
@@ -541,6 +541,8 @@ export async function main(ns: NS) {
         delete wnd.tmrAutoInf;
     }
 
+    endInfiltration();
+
     if (args.stop) {
         return;
     }
@@ -549,7 +551,6 @@ export async function main(ns: NS) {
         "Automated infiltration is enabled...\nVWhen you visit the infiltration screen of any company, all tasks are completed automatically."
     );
 
-    endInfiltration();
 
     // Monitor the current screen and start infiltration once a
     // valid screen is detected.
@@ -557,6 +558,39 @@ export async function main(ns: NS) {
 
     // Modify the addEventListener logic.
     wrapEventListeners();
+
+    const alertText = 'Press any key.'
+    while (TrustedKeyPress.length === 0) {
+        //await ns.prompt("A key press is required for script to work properly.")
+        ns.alert(alertText)
+        for (const alert of doc.querySelectorAll('div[role=presentation]')) {
+            if (alert.children[2].lastChild!.textContent !== alertText)
+                continue
+
+            alertBox.button = alert.children[2].firstChild! as HTMLButtonElement
+            alertBox.button.style.display = 'none'
+        }
+        await ns.sleep(100)
+    }
+    // const alert = doc.createElement('div');
+    // // const body = doc.querySelector('body')!;
+    // const root = doc.querySelector('div#root') as HTMLDivElement;
+    // alert.textContent = 'Press any key';
+    // alert.style.fontSize = '10rem';
+    // alert.style.textAlign = 'center';
+    // alert.style.position = 'fixed';
+    // alert.style.width = '100vw';
+    // alert.style.height = '100vh';
+    // alert.style.zIndex = '99999';
+    // alert.style.backgroundColor = '#0c0d0e'
+    // alert.style.color = '#21a821'
+
+    // //root.style.position = 'relative'
+    // root.prepend(alert);
+    // alert.onkeydown = function (ev: KeyboardEvent) {
+    //     root.removeChild(alert)
+    //     //root.style.position = ''
+    // }
 }
 
 /**
@@ -646,7 +680,7 @@ function endInfiltration() {
  *
  * @param {string|int} keyOrCode A single letter (string) or key-code to send.
  */
-function pressKey(keyOrCode: string) {
+function pressKey(keyOrCode: string | number) {
     let keyCode = 0;
     let key = "";
 
@@ -730,7 +764,8 @@ function playGame() {
         return;
     }
 
-    const title = h4[0].textContent!.trim().toLowerCase().split(/[!.(]/)[0];
+    const tempTitle = h4[0].textContent!.trim().toLowerCase().split(/[!.(]/)[0]
+    const title = ['distracted', 'guarding ', 'alerted'].includes(tempTitle) ? "attack after the guard drops his guard and is distracted" : tempTitle;
 
     if ("infiltration successful" === title) {
         endInfiltration();
@@ -754,6 +789,9 @@ function playGame() {
         console.error("Unknown game:", title);
     }
 }
+
+const TrustedKeyPress: KeyboardEvent[] = []
+const alertBox: { button?: HTMLButtonElement } = {}
 
 /**
  * Wrap all event listeners with a custom function that injects
@@ -792,9 +830,28 @@ function wrapEventListeners() {
                             }
                         }
 
-                        args[0] = hackedEv;
-                    }
+                        TrustedKeyPress[0].key = args[0].key
+                        TrustedKeyPress[0].keyCode = args[0].keyCode
 
+                        args[0] = TrustedKeyPress[0]
+                        if (!args[0]) {
+                            args[0] = hackedEv;
+                            console.error('You have to press any key at least once!')
+                        }
+                    }
+                    else if (TrustedKeyPress.length === 0) {
+                        TrustedKeyPress.push(Object.defineProperties(args[0], {
+                            'key': { writable: true },
+                            'keyCode': { writable: true }
+                        }))
+
+                        if (alertBox.button) {
+                            alertBox.button.style.display = ''
+                            alertBox.button.click()
+                        }
+                        else
+                            console.log('alertBox.button is undefined. wth??')
+                    }
                     return (callback as EventListener).apply(callback, args as [ev: Event])
                 };
 
