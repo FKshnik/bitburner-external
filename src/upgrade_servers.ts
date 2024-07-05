@@ -1,9 +1,16 @@
 import { NS } from "@ns";
-import { error } from "./utils";
+import { error, SchemaType, AutocompleteData } from "./utils";
+
+const schema: SchemaType = [['info', false], ['buy', false], ['r', 32]]
+
+export function autocomplete(data: AutocompleteData, _args: string[]) {
+    data.flags(schema)
+    return []
+}
 
 /** @param {NS} ns */
 export async function main(ns: NS) {
-    const args = ns.flags([['info', false], ['buy', false], ['r', 32]])
+    const args = ns.flags(schema)
     const servers = ns.getPurchasedServers()
     if (!args.buy && (servers.length === 0 || servers.every(server => ns.getServerMaxRam(server) === ns.getPurchasedServerMaxRam()))) {
         ns.tprint(error('No purchased servers to upgrade.'))
