@@ -294,13 +294,13 @@ export async function main(ns: NS) {
     const maxOpenPorts = getProgramsCount(ns)
     const neighbours = allNeighbours.filter(x => (ns.getServerNumPortsRequired(x) <= maxOpenPorts || ns.hasRootAccess(x)) && ns.getServerMaxRam(x) >= args.minRam)
     const filenames = ['hack.js', 'weaken.js', 'grow.js']
-    const potentialTargets = getMaxMoneyServers(ns, neighbours, maxOpenPorts).filter(x => x !== 'home')
+    const potentialTargets = getMaxMoneyServers(ns, allNeighbours, maxOpenPorts).filter(x => x !== 'home')
     const targetHost = args.targetHost || potentialTargets[0]
     const sourceHost = 'home'
 
     ns.tprint(`\n\tallNeighbours: ${allNeighbours}\n\tneighbours: ${neighbours}\n\ttargetHost: ${targetHost}\n\tsourceHost: ${sourceHost}\n\n`)
 
-    for (const host of neighbours.filter(x => !ns.hasRootAccess(x))) {
+    for (const host of [...neighbours, ...potentialTargets].filter(x => !ns.hasRootAccess(x))) {
         if (ns.fileExists('BruteSSH.exe', sourceHost))
             ns.brutessh(host)
 
