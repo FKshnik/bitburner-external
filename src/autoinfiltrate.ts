@@ -561,7 +561,6 @@ export async function main(ns: NS) {
 
     const alertText = 'Press any key.'
     while (TrustedKeyPress.length === 0) {
-        //await ns.prompt("A key press is required for script to work properly.")
         ns.alert(alertText)
         for (const alert of doc.querySelectorAll('div[role=presentation]')) {
             if (alert.children[2].lastChild!.textContent !== alertText)
@@ -572,25 +571,6 @@ export async function main(ns: NS) {
         }
         await ns.sleep(100)
     }
-    // const alert = doc.createElement('div');
-    // // const body = doc.querySelector('body')!;
-    // const root = doc.querySelector('div#root') as HTMLDivElement;
-    // alert.textContent = 'Press any key';
-    // alert.style.fontSize = '10rem';
-    // alert.style.textAlign = 'center';
-    // alert.style.position = 'fixed';
-    // alert.style.width = '100vw';
-    // alert.style.height = '100vh';
-    // alert.style.zIndex = '99999';
-    // alert.style.backgroundColor = '#0c0d0e'
-    // alert.style.color = '#21a821'
-
-    // //root.style.position = 'relative'
-    // root.prepend(alert);
-    // alert.onkeydown = function (ev: KeyboardEvent) {
-    //     root.removeChild(alert)
-    //     //root.style.position = ''
-    // }
 }
 
 /**
