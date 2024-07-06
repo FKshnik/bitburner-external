@@ -162,9 +162,16 @@ async function multipleHwgw(ns: NS, neighbours: string[], targetHosts: string[],
     let prevRam = getRam()
     let prevHackingLevel = ns.getHackingLevel()
     let prevProgramsCount = getProgramsCount(ns)
+    let prevTime = Date.now()
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
+        if (Date.now() - prevTime >= 1000 * 60 * 5) {
+            potentialTargets.forEach(v => v.badTarget = false)
+            infolog(ns, `badTarget flags have been reset.`)
+            prevTime = Date.now()
+        }
+
         if (prevRam < getRam()) {
             const newRam = getRam()
             potentialTargets.forEach(host => host.badTarget = false)
