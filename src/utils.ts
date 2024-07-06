@@ -67,6 +67,31 @@ export function getMaxMoneyServers(ns: NS, servers: string[], openPorts: number)
 export function getMaxMoneyServer(ns: NS, servers: string[], openPorts: number): string {
     return getMaxMoneyServers(ns, servers, openPorts)[0]
 }
+/**
+ * @param {NS} ns 
+ * @param {string[]} servers Server names for which root access would tried to be granted.
+ */
+export function getRootAccess(ns: NS, servers: string[]): void {
+    const sourceHost = 'home'
+    for (const host of servers) {
+        if (ns.fileExists('BruteSSH.exe', sourceHost))
+            ns.brutessh(host)
+
+        if (ns.fileExists('FTPCrack.exe', sourceHost))
+            ns.ftpcrack(host)
+
+        if (ns.fileExists('relaySMTP.exe', sourceHost))
+            ns.relaysmtp(host)
+
+        if (ns.fileExists('HTTPWorm.exe', sourceHost))
+            ns.httpworm(host)
+
+        if (ns.fileExists('SQLInject.exe', sourceHost))
+            ns.sqlinject(host)
+
+        ns.nuke(host)
+    }
+}
 
 /**
  * @param {NS} ns

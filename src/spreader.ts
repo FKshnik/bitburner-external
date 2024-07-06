@@ -1,5 +1,5 @@
 import { NS } from "@ns"
-import { getNeighbours, getMaxMoneyServers, getProgramsCount, getMaxThreadsCount, getServerRamAvailable } from "utils"
+import { getNeighbours, getMaxMoneyServers, getProgramsCount, getMaxThreadsCount, getServerRamAvailable, getRootAccess } from "utils"
 
 /**
  * @param {NS} ns
@@ -151,15 +151,48 @@ async function multipleHwgw(ns: NS, neighbours: string[], targetHosts: string[],
     for (const targetHost of targetHosts)
         pids[targetHost] = []
 
-    const potentialTargets = targetHosts.map(targetHost => ({ hostname: targetHost, badTarget: false }))
+    let potentialTargets = targetHosts.map(host => ({ hostname: host, badTarget: false }))
 
     log(ns, `neighbours: ${neighbours}`)
-    log(ns, `potentialTargets: ${potentialTargets.map(x => x.hostname)}`)
+    log(ns, `potentialTargets: ${potentialTargets.map(host => host.hostname)}`)
     log(ns, `targetHackAmount: ${targetHackAmount}`)
     log(ns, `ramLimit: ${ramLimit}`)
 
+    const getRam = (ns.getPurchasedServers().reduce<number>).bind(ns.getPurchasedServers(), (a: number, v: string) => a + ns.getServerMaxRam(v), 0)
+    let prevRam = getRam()
+    let prevHackingLevel = ns.getHackingLevel()
+    let prevProgramsCount = getProgramsCount(ns)
+
     // eslint-disable-next-line no-constant-condition
     while (true) {
+        if (prevRam < getRam()) {
+            const newRam = getRam()
+            potentialTargets.forEach(host => host.badTarget = false)
+            log(ns, `!!UPDATE!! RAM upgraded from ${ns.formatRam(prevRam)} to ${ns.formatRam(newRam)}; badTarget flags have been reset.`)
+            prevRam = newRam
+        }
+
+        if (prevHackingLevel < ns.getHackingLevel() || prevProgramsCount < getProgramsCount(ns)) {
+            const newHackingLevel = ns.getHackingLevel()
+            const newProgramsCount = getProgramsCount(ns)
+
+            const updateHackingLevelMessage = prevHackingLevel < newHackingLevel ? `hacking level changed from ${prevHackingLevel} to ${newHackingLevel}` : undefined
+            const updateProgramsCountMessage = prevProgramsCount < newProgramsCount ? `programs count changed from ${prevProgramsCount} to ${newProgramsCount}` : undefined
+
+            const updateMessage = `${updateHackingLevelMessage || ''}${(updateHackingLevelMessage && updateProgramsCountMessage) ? ' and ' : ''}${updateProgramsCountMessage || ''}`
+
+            const nextPotentialTargets = getMaxMoneyServers(ns, getNeighbours(ns, args.depth), getProgramsCount(ns))
+            if (nextPotentialTargets.length !== potentialTargets.length) {
+                getRootAccess(ns, nextPotentialTargets.filter(host => !ns.hasRootAccess(host)))
+                const extra = [...new Set(nextPotentialTargets).difference(new Set(potentialTargets.map(host => host.hostname)))]
+                potentialTargets = [...potentialTargets, ...extra.map(host => ({ hostname: host, badTarget: false }))]
+                log(ns, `!!UPDATE!! ${updateMessage}${updateMessage ? ';' : ''} potentialTargets: ${potentialTargets}`)
+            }
+
+            prevHackingLevel = newHackingLevel
+            prevProgramsCount = newProgramsCount
+        }
+
         for (const targetHost of potentialTargets) {
             if (targetHost.badTarget || pids[targetHost.hostname].some(pid => ns.isRunning(pid)))
                 continue
@@ -237,19 +270,19 @@ async function multipleHwgw(ns: NS, neighbours: string[], targetHosts: string[],
     }
 }
 
+type Args = {
+    depth: number,
+    targetHost?: string,
+    minRam: number,
+}
+
+const args: Args = {
+    depth: 3,
+    minRam: 4,
+}
+
 /** @param {NS} ns */
 export async function main(ns: NS) {
-    type Args = {
-        depth: number,
-        targetHost?: string,
-        minRam: number,
-    }
-
-    const args: Args = {
-        depth: 3,
-        minRam: 4,
-    }
-
     const flags = ns.flags([['d', 3], ['r', 4], ['target', ''], ['deplete', false]])
 
     if (flags.d) {
@@ -300,24 +333,7 @@ export async function main(ns: NS) {
 
     ns.tprint(`\n\tallNeighbours: ${allNeighbours}\n\tneighbours: ${neighbours}\n\ttargetHost: ${targetHost}\n\tsourceHost: ${sourceHost}\n\n`)
 
-    for (const host of [...neighbours, ...potentialTargets].filter(x => !ns.hasRootAccess(x))) {
-        if (ns.fileExists('BruteSSH.exe', sourceHost))
-            ns.brutessh(host)
-
-        if (ns.fileExists('FTPCrack.exe', sourceHost))
-            ns.ftpcrack(host)
-
-        if (ns.fileExists('relaySMTP.exe', sourceHost))
-            ns.relaysmtp(host)
-
-        if (ns.fileExists('HTTPWorm.exe', sourceHost))
-            ns.httpworm(host)
-
-        if (ns.fileExists('SQLInject.exe', sourceHost))
-            ns.sqlinject(host)
-
-        ns.nuke(host)
-    }
+    getRootAccess(ns, [...neighbours, ...potentialTargets].filter(x => !ns.hasRootAccess(x)))
 
     ns.write('log.txt', '', 'w')
 
