@@ -32,11 +32,21 @@ const state: State = {
 // Speed of game actions, in milliseconds. Default 22
 const speed = 25;
 
+type DocType = Document & {
+    _addEventListener?: Document['addEventListener']
+    _removeEventListener?: Document['removeEventListener']
+    eventListeners?: Record<string, {
+        listener: EventListenerOrEventListenerObject
+        useCapture: boolean | AddEventListenerOptions
+        wrapped?: EventListenerOrEventListenerObject
+    }[]>
+}
+
 // Small hack to save RAM.
 // This will work smoothly, because the script does not use
 // any "ns" functions, it's a pure browser automation tool.
-const wnd: Window & typeof globalThis = eval("window");
-const doc: Document = wnd["document"];
+const wnd: Window & typeof globalThis & { tmrAutoInf?: number } = eval("window");
+const doc = wnd["document"] as DocType;
 
 // List of all games and an automated solver.
 const infiltrationGames = [
@@ -810,8 +820,8 @@ function wrapEventListeners() {
                             }
                         }
 
-                        TrustedKeyPress[0].key = args[0].key
-                        TrustedKeyPress[0].keyCode = args[0].keyCode
+                        (TrustedKeyPress[0] as { key: string }).key = args[0].key;
+                        (TrustedKeyPress[0] as { keyCode: number }).keyCode = args[0].keyCode;
 
                         args[0] = TrustedKeyPress[0]
                         if (!args[0]) {
@@ -837,7 +847,8 @@ function wrapEventListeners() {
 
                 for (const prop in callback) {
                     if ("function" === typeof callback[prop as keyof typeof callback]) {
-                        handler![prop as keyof typeof handler] = callback[prop as keyof typeof callback].bind(callback);
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        (handler! as any)[prop as keyof typeof handler] = (callback as any)[prop as keyof typeof callback].bind(callback);
                         // handler = Object.assign({}, callback)
                     } else {
                         // handler[prop as keyof typeof handler] = callback[prop];
@@ -858,7 +869,7 @@ function wrapEventListeners() {
                 wrapped: handler,
             });
 
-            return this._addEventListener(
+            return this._addEventListener!(
                 type,
                 handler ? handler : callback,
                 options
@@ -869,7 +880,7 @@ function wrapEventListeners() {
     if (!doc._removeEventListener) {
         doc._removeEventListener = doc.removeEventListener;
 
-        doc.removeEventListener = function (type, callback, options) {
+        doc.removeEventListener = function <K extends keyof DocumentEventMap>(type: K, callback: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions) {
             if ("undefined" === typeof options) {
                 options = false;
             }
@@ -887,7 +898,7 @@ function wrapEventListeners() {
                     this.eventListeners[type][i].useCapture === options
                 ) {
                     if (this.eventListeners[type][i].wrapped) {
-                        callback = this.eventListeners[type][i].wrapped;
+                        callback = this.eventListeners[type][i].wrapped!;
                     }
 
                     this.eventListeners[type].splice(i, 1);
@@ -899,7 +910,7 @@ function wrapEventListeners() {
                 delete this.eventListeners[type];
             }
 
-            return this._removeEventListener(type, callback, options);
+            return this._removeEventListener!(type, callback, options);
         };
     }
 }
