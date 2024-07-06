@@ -192,7 +192,7 @@ async function multipleHwgw(ns: NS, neighbours: string[], targetHosts: string[],
             if (nextPotentialTargets.length !== potentialTargets.length) {
                 getRootAccess(ns, nextPotentialTargets.filter(host => !ns.hasRootAccess(host)))
                 const extra = [...new Set(nextPotentialTargets).difference(new Set(potentialTargets.map(host => host.hostname)))]
-                potentialTargets = [...potentialTargets, ...extra.map(host => ({ hostname: host, badTarget: false }))]
+                potentialTargets = [...potentialTargets, ...extra.map(host => ({ hostname: host, badTarget: false }))].sort((a, b) => ns.getServerMaxMoney(b.hostname) - ns.getServerMaxMoney(a.hostname))
                 log(ns, `!!UPDATE!! ${updateMessage}${updateMessage ? ';' : ''} potentialTargets: ${potentialTargets}`)
             }
 
