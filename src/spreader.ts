@@ -195,12 +195,21 @@ async function multipleHwgw(ns: NS, neighbours: string[], targetHosts: string[],
                 const mappedPotentialTargets = potentialTargets.map(host => host.hostname)
                 const extra = nextPotentialTargets.filter(host => !mappedPotentialTargets.includes(host))
                 potentialTargets = [...potentialTargets, ...extra.map(host => ({ hostname: host, badTarget: false }))].sort((a, b) => ns.getServerMaxMoney(b.hostname) - ns.getServerMaxMoney(a.hostname))
-                log(ns, `!!UPDATE!! ${updateMessage}${updateMessage ? ';' : ''} potentialTargets: ${potentialTargets}`)
+
+                for (const targetHost of extra) {
+                    pids[targetHost] = []
+                }
+
+                log(ns, `!!UPDATE!! ${updateMessage}${updateMessage ? ';' : ''} potentialTargets: ${potentialTargets.map(host => host.hostname)}`)
             }
 
             if (nextNeighbours.length !== neighbours.length || !nextNeighbours.every((value, index) => value === neighbours[index])) {
                 getRootAccess(ns, nextNeighbours.filter(host => !ns.hasRootAccess(host)))
                 neighbours = nextNeighbours
+
+                for (const host of neighbours)
+                    filenames.forEach(function (filename) { ns.scp(filename, host, sourceHost) })
+
                 log(ns, `!!UPDATE!! ${updateMessage}${updateMessage ? ';' : ''} neighbours: ${neighbours}`)
             }
 
@@ -297,6 +306,9 @@ const args: Args = {
     minRam: 4,
 }
 
+const filenames = ['hack.js', 'weaken.js', 'grow.js']
+const sourceHost = 'home'
+
 /** @param {NS} ns */
 export async function main(ns: NS) {
     const flags = ns.flags([['d', 3], ['r', 4], ['target', ''], ['deplete', false]])
@@ -342,10 +354,8 @@ export async function main(ns: NS) {
     const allNeighbours = getNeighbours(ns, args.depth)
     const maxOpenPorts = getProgramsCount(ns)
     const neighbours = allNeighbours.filter(x => (ns.getServerNumPortsRequired(x) <= maxOpenPorts || ns.hasRootAccess(x)) && ns.getServerMaxRam(x) >= args.minRam)
-    const filenames = ['hack.js', 'weaken.js', 'grow.js']
     const potentialTargets = getMaxMoneyServers(ns, allNeighbours, maxOpenPorts).filter(x => x !== 'home')
     const targetHost = args.targetHost || potentialTargets[0]
-    const sourceHost = 'home'
 
     ns.tprint(`\n\tallNeighbours: ${allNeighbours}\n\tneighbours: ${neighbours}\n\ttargetHost: ${targetHost}\n\tsourceHost: ${sourceHost}\n\n`)
 
