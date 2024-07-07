@@ -189,11 +189,18 @@ async function multipleHwgw(ns: NS, neighbours: string[], targetHosts: string[],
             const updateMessage = `${updateHackingLevelMessage || ''}${(updateHackingLevelMessage && updateProgramsCountMessage) ? ' and ' : ''}${updateProgramsCountMessage || ''}`
 
             const nextPotentialTargets = getMaxMoneyServers(ns, getNeighbours(ns, args.depth), getProgramsCount(ns))
+            const nextNeighbours = (ns.getPurchasedServers().reduce((a, v) => ns.getServerMaxRam(v) + a, 0) > 1024 * 20) ? [...ns.getPurchasedServers(), 'home'] : getNeighbours(ns, args.depth).filter(x => (ns.getServerNumPortsRequired(x) <= newProgramsCount || ns.hasRootAccess(x)) && ns.getServerMaxRam(x) >= args.minRam)
             if (nextPotentialTargets.length !== potentialTargets.length) {
                 getRootAccess(ns, nextPotentialTargets.filter(host => !ns.hasRootAccess(host)))
                 const extra = [...new Set(nextPotentialTargets).difference(new Set(potentialTargets.map(host => host.hostname)))]
                 potentialTargets = [...potentialTargets, ...extra.map(host => ({ hostname: host, badTarget: false }))].sort((a, b) => ns.getServerMaxMoney(b.hostname) - ns.getServerMaxMoney(a.hostname))
                 log(ns, `!!UPDATE!! ${updateMessage}${updateMessage ? ';' : ''} potentialTargets: ${potentialTargets}`)
+            }
+
+            if (nextNeighbours !== neighbours) {
+                getRootAccess(ns, nextNeighbours.filter(host => !ns.hasRootAccess(host)))
+                neighbours = nextNeighbours
+                log(ns, `!!UPDATE!! ${updateMessage}${updateMessage ? ';' : ''} neighbours: ${neighbours}`)
             }
 
             prevHackingLevel = newHackingLevel
