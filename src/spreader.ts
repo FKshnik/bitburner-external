@@ -192,12 +192,13 @@ async function multipleHwgw(ns: NS, neighbours: string[], targetHosts: string[],
             const nextNeighbours = (ns.getPurchasedServers().reduce((a, v) => ns.getServerMaxRam(v) + a, 0) > 1024 * 20) ? [...ns.getPurchasedServers(), 'home'] : getNeighbours(ns, args.depth).filter(x => (ns.getServerNumPortsRequired(x) <= newProgramsCount || ns.hasRootAccess(x)) && ns.getServerMaxRam(x) >= args.minRam)
             if (nextPotentialTargets.length !== potentialTargets.length) {
                 getRootAccess(ns, nextPotentialTargets.filter(host => !ns.hasRootAccess(host)))
-                const extra = [...new Set(nextPotentialTargets).difference(new Set(potentialTargets.map(host => host.hostname)))]
+                const mappedPotentialTargets = potentialTargets.map(host => host.hostname)
+                const extra = nextPotentialTargets.filter(host => !mappedPotentialTargets.includes(host))
                 potentialTargets = [...potentialTargets, ...extra.map(host => ({ hostname: host, badTarget: false }))].sort((a, b) => ns.getServerMaxMoney(b.hostname) - ns.getServerMaxMoney(a.hostname))
                 log(ns, `!!UPDATE!! ${updateMessage}${updateMessage ? ';' : ''} potentialTargets: ${potentialTargets}`)
             }
 
-            if (nextNeighbours !== neighbours) {
+            if (nextNeighbours.length !== neighbours.length || !nextNeighbours.every((value, index) => value === neighbours[index])) {
                 getRootAccess(ns, nextNeighbours.filter(host => !ns.hasRootAccess(host)))
                 neighbours = nextNeighbours
                 log(ns, `!!UPDATE!! ${updateMessage}${updateMessage ? ';' : ''} neighbours: ${neighbours}`)
@@ -213,11 +214,12 @@ async function multipleHwgw(ns: NS, neighbours: string[], targetHosts: string[],
 
             const minHackAmount = ns.hackAnalyze(targetHost.hostname)
             const threads: ThreadsDistribution = {
-                hack: Math.max(Math.ceil(targetHackAmount / minHackAmount), 1),
+                hack: Math.max(Math.floor(targetHackAmount / minHackAmount), 1),
                 weaken1: 1,
                 grow: 1,
                 weaken2: 1
             }
+
             const hostMaxMoney = ns.getServerMaxMoney(targetHost.hostname)
             const hostAvailMoney = ns.getServerMoneyAvailable(targetHost.hostname)
             const hostSecLevel = ns.getServerSecurityLevel(targetHost.hostname)
