@@ -1,5 +1,5 @@
 import { NS } from "@ns"
-import { getNeighbours, getMaxMoneyServers, getProgramsCount, getMaxThreadsCount, getServerRamAvailable, getRootAccess } from "utils"
+import { getNeighbours, getMaxMoneyServers, getProgramsCount, getMaxThreadsCount, getServerRamAvailable, getRootAccess, SchemaType, AutocompleteData } from "utils"
 
 /**
  * @param {NS} ns
@@ -308,10 +308,16 @@ const args: Args = {
 
 const filenames = ['hack.js', 'weaken.js', 'grow.js']
 const sourceHost = 'home'
+const schema: SchemaType = [['d', 3], ['r', 4], ['target', ''], ['deplete', false]]
+
+export function autocomplete(data: AutocompleteData, _args: string[]) {
+    data.flags(schema)
+    return [...data.servers]
+}
 
 /** @param {NS} ns */
 export async function main(ns: NS) {
-    const flags = ns.flags([['d', 3], ['r', 4], ['target', ''], ['deplete', false]])
+    const flags = ns.flags(schema)
 
     if (flags.d) {
         // if (!Number.isInteger(ns.args[1])) {
