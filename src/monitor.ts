@@ -1,4 +1,4 @@
-import { NS } from "@ns";
+import { AutocompleteData, NS } from "@ns";
 
 /** @param {NS} ns */
 export async function main(ns: NS) {
@@ -34,7 +34,6 @@ export async function main(ns: NS) {
     }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-export function autocomplete(data: any, args: any) {
+export function autocomplete(data: AutocompleteData, _args: string[]) {
     return data.servers;
 }

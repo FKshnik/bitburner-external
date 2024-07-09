@@ -1,5 +1,5 @@
-import { NS } from "@ns"
-import { getNeighbours, getMaxMoneyServers, getProgramsCount, getMaxThreadsCount, getServerRamAvailable, getRootAccess, SchemaType, AutocompleteData } from "utils"
+import { AutocompleteData, NS } from "@ns"
+import { getNeighbours, getMaxMoneyServers, getProgramsCount, getMaxThreadsCount, getServerRamAvailable, getRootAccess, SchemaType } from "utils"
 
 /**
  * @param {NS} ns

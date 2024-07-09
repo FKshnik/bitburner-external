@@ -1,5 +1,5 @@
-import { NS } from "@ns";
-import { error, SchemaType, AutocompleteData } from "./utils";
+import { AutocompleteData, NS } from "@ns";
+import { error, SchemaType } from "./utils";
 
 const schema: SchemaType = [['info', false], ['buy', false], ['r', 32], ['auto', false]]
 

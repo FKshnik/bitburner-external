@@ -2,13 +2,6 @@ import { NS } from "@ns"
 
 export type SchemaType = [string, string | number | boolean | string[]][]
 
-export type AutocompleteData = {
-    servers: string[]
-    txts: string[]
-    scripts: string[]
-    flags: NS['flags']
-}
-
 export enum Color {
     Cyan = "\u001b[36m",
     Green = "\u001b[32m",
