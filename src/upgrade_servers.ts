@@ -11,6 +11,30 @@ export function autocomplete(data: AutocompleteData, _args: string[]) {
 /** @param {NS} ns */
 export async function main(ns: NS) {
     const args = ns.flags(schema)
+
+    if (args.auto) {
+        while (ns.getPurchasedServers().length < ns.getPurchasedServerLimit()) {
+            const servers = ns.getPurchasedServers()
+
+            while (ns.getServerMoneyAvailable('home') < ns.getPurchasedServerCost(args.r as number)) {
+                await ns.sleep(200)
+            }
+
+            for (let i = servers.length; i < ns.getPurchasedServerLimit(); i++)
+                ns.purchaseServer(`pserv-${i}`, args.r as number)
+        }
+
+        const servers = ns.getPurchasedServers()
+        while (ns.getServerMaxRam(servers[0]) < ns.getPurchasedServerMaxRam()) {
+            if (ns.getPurchasedServerUpgradeCost(servers[0], ns.getServerMaxRam(servers[0]) * 2) * servers.length < ns.getServerMoneyAvailable('home'))
+                ns.exec(ns.getScriptName(), 'home', 1)
+
+            await ns.sleep(200)
+        }
+
+        return
+    }
+
     const servers = ns.getPurchasedServers()
     if (!args.buy && (servers.length === 0 || servers.every(server => ns.getServerMaxRam(server) === ns.getPurchasedServerMaxRam()))) {
         ns.tprint(error('No purchased servers to upgrade.'))
@@ -53,29 +77,6 @@ export async function main(ns: NS) {
     Current max RAM servers have : ${ns.formatRam(currentRam)}
     Upgrade RAM to               : ${ns.formatRam(upgradeRam)}
     RAM limit                    : ${ns.formatRam(ns.getPurchasedServerMaxRam())}`)
-
-        return
-    }
-
-    if (args.auto) {
-        while (ns.getPurchasedServers().length < ns.getPurchasedServerLimit()) {
-            const servers = ns.getPurchasedServers()
-
-            while (ns.getServerMoneyAvailable('home') < ns.getPurchasedServerCost(args.r as number)) {
-                await ns.sleep(200)
-            }
-
-            for (let i = servers.length; i < ns.getPurchasedServerLimit(); i++)
-                ns.purchaseServer(`pserv-${i}`, args.r as number)
-        }
-
-        const servers = ns.getPurchasedServers()
-        while (ns.getServerMaxRam(servers[0]) < ns.getPurchasedServerMaxRam()) {
-            if (ns.getPurchasedServerUpgradeCost(servers[0], ns.getServerMaxRam(servers[0]) * 2) * servers.length < ns.getServerMoneyAvailable('home'))
-                ns.exec(ns.getScriptName(), 'home', 1)
-
-            await ns.sleep(200)
-        }
 
         return
     }
