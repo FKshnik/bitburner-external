@@ -158,7 +158,7 @@ async function multipleHwgw(ns: NS, neighbours: string[], targetHosts: string[],
     log(ns, `targetHackAmount: ${targetHackAmount}`)
     log(ns, `ramLimit: ${ramLimit}`)
 
-    const getRam = (ns.getPurchasedServers().reduce<number>).bind(ns.getPurchasedServers(), (a: number, v: string) => a + ns.getServerMaxRam(v), 0)
+    const getRam = () => ns.getPurchasedServers().reduce((a: number, v: string) => a + ns.getServerMaxRam(v), 0)
     let prevRam = getRam()
     let prevHackingLevel = ns.getHackingLevel()
     let prevProgramsCount = getProgramsCount(ns)
