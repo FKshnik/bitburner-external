@@ -547,7 +547,7 @@ export async function main(ns: NS) {
 
     if (wnd.tmrAutoInf) {
         print("Stopping automated infiltration...");
-        clearInterval(wnd.tmrAutoInf);
+        clearTimeout(wnd.tmrAutoInf);
         delete wnd.tmrAutoInf;
     }
 
@@ -564,7 +564,7 @@ export async function main(ns: NS) {
 
     // Monitor the current screen and start infiltration once a
     // valid screen is detected.
-    wnd.tmrAutoInf = setInterval(infLoop, speed);
+    wnd.tmrAutoInf = setTimeout(async function loop() { await infLoop(); wnd.tmrAutoInf = setTimeout(loop, speed); }, speed);
 
     // Modify the addEventListener logic.
     wrapEventListeners();
@@ -586,11 +586,11 @@ export async function main(ns: NS) {
 /**
  * The infiltration loop, which is called at a rapid interval
  */
-function infLoop() {
+async function infLoop() {
     if (!state.started) {
         waitForStart();
     } else {
-        playGame();
+        await playGame();
     }
 }
 
@@ -735,7 +735,7 @@ function waitForStart() {
 /**
  * Identify the current infiltration game.
  */
-function playGame() {
+async function playGame() {
     const screens = doc.querySelectorAll(".MuiContainer-root");
 
     if (!screens.length) {
