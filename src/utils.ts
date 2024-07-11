@@ -1,6 +1,11 @@
 import { NS } from "@ns"
 
-export type SchemaType = Parameters<NS['flags']>[0]
+export type Schema = Parameters<NS['flags']>[0]
+
+export function createTypedArgs<T extends Readonly<Readonly<Schema[number]>[]>>(ns: NS, schema: T) {
+    const f = ns.flags(schema as unknown as Schema)
+    return f as unknown as Readonly<Record<T[number][0], Schema[number][1]>> & { _: Schema[number][1] }
+}
 
 export enum Color {
     Cyan = "\u001b[36m",
