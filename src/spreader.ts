@@ -1,5 +1,5 @@
 import { AutocompleteData, NS } from "@ns"
-import { getNeighbours, getMaxMoneyServers, getProgramsCount, getMaxThreadsCount, getServerRamAvailable, getRootAccess, Schema, createLogger, Logger } from "utils"
+import { getNeighbours, getMaxMoneyServers, getProgramsCount, getMaxThreadsCount, getServerRamAvailable, getRootAccess, Schema, createLogger, Logger, createTypedArgs } from "utils"
 
 /**
  * @param {NS} ns
@@ -301,16 +301,16 @@ const args: Args = {
 let log: Logger
 const filenames = ['hack.js', 'weaken.js', 'grow.js']
 const sourceHost = 'home'
-const schema: Schema = [['d', 3], ['r', 4], ['target', ''], ['deplete', false]]
+const schema = [['d', 3], ['r', 4], ['target', ''], ['deplete', false]] as const
 
 export function autocomplete(data: AutocompleteData, _args: string[]) {
-    data.flags(schema)
+    data.flags(schema as unknown as Schema)
     return [...data.servers]
 }
 
 /** @param {NS} ns */
 export async function main(ns: NS) {
-    const flags = ns.flags(schema)
+    const flags = createTypedArgs(ns, schema)
     log = createLogger(ns, ns.getScriptName().slice(0, -2))
 
     if (flags.d) {
@@ -318,7 +318,7 @@ export async function main(ns: NS) {
         //     ns.tprint(`Invalid second argument: should be integer, but got '${ns.args[1]}' with type '${typeof ns.args[1]}'`)
         //     return
         // }
-        args.depth = flags.d as number
+        args.depth = flags.d
         // ns.args.shift()
         // ns.args.shift()
     }
@@ -328,14 +328,14 @@ export async function main(ns: NS) {
         //     ns.tprint(`Invalid second argument: should be integer, but got '${ns.args[1]}' with type '${typeof ns.args[1]}'`)
         //     return
         // }
-        args.minRam = Math.max(flags.r as number, 4)
+        args.minRam = Math.max(flags.r, 4)
         // ns.args.shift()
         // ns.args.shift()
     }
 
     if (flags.target) {
-        if (ns.serverExists(flags.target as string)) {
-            args.targetHost = flags.target as string
+        if (ns.serverExists(flags.target)) {
+            args.targetHost = flags.target
             // ns.args.shift()
         }
         else {

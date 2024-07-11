@@ -1,27 +1,27 @@
 import { AutocompleteData, NS } from "@ns";
-import { error, SchemaType } from "./utils";
+import { createTypedArgs, error, Schema } from "./utils";
 
-const schema: SchemaType = [['info', false], ['buy', false], ['r', 32], ['auto', false]]
+const schema = [['info', false], ['buy', false], ['r', 32], ['auto', false]] as const
 
 export function autocomplete(data: AutocompleteData, _args: string[]) {
-    data.flags(schema)
+    data.flags(schema as unknown as Schema)
     return []
 }
 
 /** @param {NS} ns */
 export async function main(ns: NS) {
-    const args = ns.flags(schema)
+    const args = createTypedArgs(ns, schema)
 
     if (args.auto) {
         while (ns.getPurchasedServers().length < ns.getPurchasedServerLimit()) {
             const servers = ns.getPurchasedServers()
 
-            while (ns.getServerMoneyAvailable('home') < ns.getPurchasedServerCost(args.r as number)) {
+            while (ns.getServerMoneyAvailable('home') < ns.getPurchasedServerCost(args.r)) {
                 await ns.sleep(200)
             }
 
             for (let i = servers.length; i < ns.getPurchasedServerLimit(); i++)
-                ns.purchaseServer(`pserv-${i}`, args.r as number)
+                ns.purchaseServer(`pserv-${i}`, args.r)
         }
 
         const servers = ns.getPurchasedServers()
@@ -45,9 +45,9 @@ export async function main(ns: NS) {
         if (args.info) {
             ns.tprint(`
 
-        Cost of buying 1 server    : ${ns.formatNumber(ns.getPurchasedServerCost(args.r as number))}
-        Cost of buying all servers : ${ns.formatNumber(ns.getPurchasedServerCost(args.r as number) * (ns.getPurchasedServerLimit() - servers.length))}
-        RAM on servers             : ${ns.formatRam(args.r as number)}`)
+        Cost of buying 1 server    : ${ns.formatNumber(ns.getPurchasedServerCost(args.r))}
+        Cost of buying all servers : ${ns.formatNumber(ns.getPurchasedServerCost(args.r) * (ns.getPurchasedServerLimit() - servers.length))}
+        RAM on servers             : ${ns.formatRam(args.r)}`)
 
             return
         }
@@ -58,7 +58,7 @@ export async function main(ns: NS) {
         }
 
         for (let i = servers.length; i < ns.getPurchasedServerLimit(); i++)
-            ns.purchaseServer(`pserv-${i}`, args.r as number)
+            ns.purchaseServer(`pserv-${i}`, args.r)
 
         return
     }
