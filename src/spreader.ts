@@ -311,7 +311,7 @@ export function autocomplete(data: AutocompleteData, _args: string[]) {
 /** @param {NS} ns */
 export async function main(ns: NS) {
     const flags = createTypedArgs(ns, schema)
-    log = createLogger(ns, ns.getScriptName().slice(0, -2))
+    log = createLogger(ns, ns.getScriptName().slice(0, -3))
 
     if (flags.d) {
         // if (!Number.isInteger(ns.args[1])) {
