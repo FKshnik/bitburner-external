@@ -58,18 +58,14 @@ async function hwgw(
     targetHost: string,
     baseThreads: ThreadsDistribution = structuredClone(defaultThreadsDistribution)
 ) {
-    // hack -> weaken -> grow -> weaken
-    const delay = 50
     const executionQueue = [
-        { filename: 'hack.js', name: 'hack', time: Math.ceil(ns.getHackTime(targetHost)), i: 0 },
-        { filename: 'weaken.js', name: 'weaken1', time: Math.ceil(ns.getWeakenTime(targetHost)), i: 1 },
-        { filename: 'grow.js', name: 'grow', time: Math.ceil(ns.getGrowTime(targetHost)), i: 2 },
-        { filename: 'weaken.js', name: 'weaken2', time: Math.ceil(ns.getWeakenTime(targetHost)), i: 3 }
-    ].sort((a, b) => b.time - a.time)
+        { filename: 'hack.js', name: 'hack', time: ns.getHackTime(targetHost), i: 0 },
+        { filename: 'weaken.js', name: 'weaken1', time: ns.getWeakenTime(targetHost), i: 1 },
+        { filename: 'grow.js', name: 'grow', time: ns.getGrowTime(targetHost), i: 2 },
+        { filename: 'weaken.js', name: 'weaken2', time: ns.getWeakenTime(targetHost), i: 3 }
+    ]
 
     const longestTime = Math.max(...executionQueue.map(x => x.time))
-    const batchTime = longestTime + delay * 2
-    const timeToNextBatch = batchTime + delay * 2
 
     /**
      * |         =======      | hack
@@ -105,22 +101,18 @@ async function hwgw(
     // 3   1 11
     // 5   1 10
 
-    // const baseRamReq = ns.getScriptRam('hack.js') * baseThreads.hack + ns.getScriptRam('weaken.js') * (baseThreads.weaken1 + baseThreads.weaken2) + ns.getScriptRam('grow.js') * baseThreads.grow
-    const startTime = Date.now()
-
-    const pids = []
+    const pids: number[] = []
     for (const host of neighbours) {
         for (let i = 0; i < executionQueue.length; i++) {
             const action = executionQueue[i]
             if (baseThreads[action.name as keyof typeof baseThreads] === 0)
                 continue
 
-            const sleepTime = Math.ceil(batchTime - action.time - (executionQueue.length - action.i - 1) * delay)
+            const sleepTime = longestTime - action.time
             if (sleepTime < 0) {
-                throw `sleepTime is less than 0.\n\nbatchTime: ${batchTime}\naction.time: ${action.time}`
+                throw `sleepTime is less than 0.\n\nbatchTime: ${longestTime}\naction.time: ${action.time}`
             }
 
-            // launch action
             pids.push(ns.exec(
                 action.filename,
                 host,
@@ -130,10 +122,6 @@ async function hwgw(
             ))
         }
     }
-
-    // end - log deviation
-    const totalExecutionTime = Date.now() - startTime + timeToNextBatch
-    ns.print('INFO: time deviation: ', totalExecutionTime - timeToNextBatch)
 
     return pids
 }
