@@ -17,6 +17,30 @@ export function error(data: string): string {
     return paintString(Color.Red, data)
 }
 
+export type Logger = ReturnType<typeof createLogger>
+
+export function createLogger(ns: NS, logFolderName: string) {
+    const filenames = {
+        main: `log/${logFolderName}/main.txt`,
+        info: `log/${logFolderName}/info.txt`,
+    }
+
+    const log = function (data: string) {
+        ns.write(filenames.main, `[${new Date().toLocaleString()}] ${data}\n`)
+    }
+
+    log.info = function (data: string) {
+        ns.write(filenames.info, `[${new Date().toLocaleString()}] ${data}\n`)
+    }
+
+    log.clear = function () {
+        for (const filename of Object.values(filenames))
+            ns.write(filename, '', 'w')
+    }
+
+    return log
+}
+
 /**
  * @param {NS} ns
  * @param {number} depth
