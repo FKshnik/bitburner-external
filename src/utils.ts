@@ -19,7 +19,7 @@ type Type<T> =
 
 export function createTypedArgs<T extends Readonly<Readonly<[Schema[number][0], Readonly<Schema[number][1]>]>[]>>(ns: NS, schema: T) {
     const f = ns.flags(schema as unknown as Schema)
-    return f as unknown as Readonly<FromProperties<typeof schema>> & { _: Schema[number][1] }
+    return f as unknown as Readonly<FromProperties<typeof schema>> & { _: Schema[number][1][] }
 }
 
 export enum Color {
