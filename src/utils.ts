@@ -2,9 +2,24 @@ import { NS } from "@ns"
 
 export type Schema = Parameters<NS['flags']>[0]
 
-export function createTypedArgs<T extends Readonly<Readonly<Schema[number]>[]>>(ns: NS, schema: T) {
+type FromProperties<P extends readonly unknown[]> = {
+    [K in IndexKeys<P> as Name<P[K]>]: Value<P[K]>
+}
+
+type IndexKeys<A extends readonly unknown[]> = Exclude<keyof A, keyof []>
+type Name<O> = O extends { 0: infer N } ? N extends string ? N : never : never
+type Value<O> = O extends { 1: infer N } ? Type<N> : never
+
+type Type<T> =
+    T extends number ? number
+    : T extends string ? string
+    : T extends boolean ? boolean
+    : T extends readonly unknown[] ? string[]
+    : never
+
+export function createTypedArgs<T extends Readonly<Readonly<[Schema[number][0], Readonly<Schema[number][1]>]>[]>>(ns: NS, schema: T) {
     const f = ns.flags(schema as unknown as Schema)
-    return f as unknown as Readonly<Record<T[number][0], Schema[number][1]>> & { _: Schema[number][1] }
+    return f as unknown as Readonly<FromProperties<typeof schema>> & { _: Schema[number][1] }
 }
 
 export enum Color {
