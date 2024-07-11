@@ -1,5 +1,5 @@
 import { AutocompleteData, NS } from "@ns"
-import { getNeighbours, getMaxMoneyServers, getProgramsCount, getMaxThreadsCount, getServerRamAvailable, getRootAccess, SchemaType } from "utils"
+import { getNeighbours, getMaxMoneyServers, getProgramsCount, getMaxThreadsCount, getServerRamAvailable, getRootAccess, Schema, createLogger, Logger } from "utils"
 
 /**
  * @param {NS} ns
@@ -44,14 +44,6 @@ const defaultThreadsDistribution: Readonly<ThreadsDistribution> = {
 
 function getBatchRamRequirements(ns: NS, { hack, weaken1, grow, weaken2 }: ThreadsDistribution): number {
     return ns.getScriptRam('hack.js') * hack + ns.getScriptRam('weaken.js') * (weaken1 + weaken2) + ns.getScriptRam('grow.js') * grow
-}
-
-function log(ns: NS, data: string) {
-    ns.write('log.txt', `[${new Date().toLocaleString()}] ${data}\n`)
-}
-
-function infolog(ns: NS, data: string) {
-    ns.write('infolog.txt', `[${new Date().toLocaleString()}] ${data}\n`)
 }
 
 /**
@@ -153,10 +145,10 @@ async function multipleHwgw(ns: NS, neighbours: string[], targetHosts: string[],
 
     let potentialTargets = targetHosts.map(host => ({ hostname: host, badTarget: false }))
 
-    log(ns, `neighbours: ${neighbours}`)
-    log(ns, `potentialTargets: ${potentialTargets.map(host => host.hostname)}`)
-    log(ns, `targetHackAmount: ${targetHackAmount}`)
-    log(ns, `ramLimit: ${ramLimit}`)
+    log(`neighbours: ${neighbours}`)
+    log(`potentialTargets: ${potentialTargets.map(host => host.hostname)}`)
+    log(`targetHackAmount: ${targetHackAmount}`)
+    log(`ramLimit: ${ramLimit}`)
 
     const getRam = () => ns.getPurchasedServers().reduce((a: number, v: string) => a + ns.getServerMaxRam(v), 0)
     let prevRam = getRam()
@@ -168,14 +160,14 @@ async function multipleHwgw(ns: NS, neighbours: string[], targetHosts: string[],
     while (true) {
         if (Date.now() - prevTime >= 1000 * 60 * 5) {
             potentialTargets.forEach(v => v.badTarget = false)
-            infolog(ns, `badTarget flags have been reset.`)
+            log.info(`badTarget flags have been reset.`)
             prevTime = Date.now()
         }
 
         if (prevRam < getRam()) {
             const newRam = getRam()
             potentialTargets.forEach(host => host.badTarget = false)
-            log(ns, `!!UPDATE!! RAM upgraded from ${ns.formatRam(prevRam)} to ${ns.formatRam(newRam)}; badTarget flags have been reset.`)
+            log(`!!UPDATE!! RAM upgraded from ${ns.formatRam(prevRam)} to ${ns.formatRam(newRam)}; badTarget flags have been reset.`)
             prevRam = newRam
         }
 
@@ -200,7 +192,7 @@ async function multipleHwgw(ns: NS, neighbours: string[], targetHosts: string[],
                     pids[targetHost] = []
                 }
 
-                log(ns, `!!UPDATE!! ${updateMessage}${updateMessage ? ';' : ''} potentialTargets: ${potentialTargets.map(host => host.hostname)}`)
+                log(`!!UPDATE!! ${updateMessage}${updateMessage ? ';' : ''} potentialTargets: ${potentialTargets.map(host => host.hostname)}`)
             }
 
             if (nextNeighbours.length !== neighbours.length || !nextNeighbours.every((value, index) => value === neighbours[index])) {
@@ -210,7 +202,7 @@ async function multipleHwgw(ns: NS, neighbours: string[], targetHosts: string[],
                 for (const host of neighbours)
                     filenames.forEach(function (filename) { ns.scp(filename, host, sourceHost) })
 
-                log(ns, `!!UPDATE!! ${updateMessage}${updateMessage ? ';' : ''} neighbours: ${neighbours}`)
+                log(`!!UPDATE!! ${updateMessage}${updateMessage ? ';' : ''} neighbours: ${neighbours}`)
             }
 
             prevHackingLevel = newHackingLevel
@@ -273,7 +265,7 @@ async function multipleHwgw(ns: NS, neighbours: string[], targetHosts: string[],
 
             if (!targetNeedsPreparations && ramReq > ramLimit || host === '') {
                 targetHost.badTarget = true
-                log(ns, `!!BADTARGET!! marking host '${targetHost.hostname}' as badTarget.`)
+                log(`!!BADTARGET!! marking host '${targetHost.hostname}' as badTarget.`)
                 continue
             }
 
@@ -286,7 +278,7 @@ async function multipleHwgw(ns: NS, neighbours: string[], targetHosts: string[],
                 threads.grow *= k
             }
 
-            infolog(ns, `launching batch on '${host}' with targetHost='${targetHost.hostname}',hack=${threads.hack},weaken1=${threads.weaken1},grow=${threads.grow},weaken2=${threads.weaken2},hackAmount=${threads.hack * minHackAmount}`)
+            log.info(`launching batch on '${host}' with targetHost='${targetHost.hostname}',hack=${threads.hack},weaken1=${threads.weaken1},grow=${threads.grow},weaken2=${threads.weaken2},hackAmount=${threads.hack * minHackAmount}`)
 
             pids[targetHost.hostname] = await hwgw(ns, [host], targetHost.hostname, threads)
         }
@@ -306,9 +298,10 @@ const args: Args = {
     minRam: 4,
 }
 
+let log: Logger
 const filenames = ['hack.js', 'weaken.js', 'grow.js']
 const sourceHost = 'home'
-const schema: SchemaType = [['d', 3], ['r', 4], ['target', ''], ['deplete', false]]
+const schema: Schema = [['d', 3], ['r', 4], ['target', ''], ['deplete', false]]
 
 export function autocomplete(data: AutocompleteData, _args: string[]) {
     data.flags(schema)
@@ -318,6 +311,7 @@ export function autocomplete(data: AutocompleteData, _args: string[]) {
 /** @param {NS} ns */
 export async function main(ns: NS) {
     const flags = ns.flags(schema)
+    log = createLogger(ns, ns.getScriptName().slice(0, -2))
 
     if (flags.d) {
         // if (!Number.isInteger(ns.args[1])) {
@@ -367,13 +361,10 @@ export async function main(ns: NS) {
 
     getRootAccess(ns, [...neighbours, ...potentialTargets].filter(x => !ns.hasRootAccess(x)))
 
-    ns.write('log.txt', '', 'w')
-
     for (const host of neighbours)
         filenames.forEach(function (filename) { ns.scp(filename, host, sourceHost) })
 
-    ns.write('log.txt', '', 'w')
-    ns.write('infolog.txt', '', 'w')
+    log.clear()
 
     if (flags.deplete) {
         const threads: ThreadsDistribution = {
