@@ -9,7 +9,7 @@ import { getNeighbours, getMaxMoneyServers, getProgramsCount, getMaxThreadsCount
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function basic_hack(ns: NS, neighbours: string[], targetHost: string, sourceHost: string) {
-    const filename = 'basic_hack.js'
+    const filename = 'basic_hack.ts'
 
     for (const host of neighbours) {
         const maxThreads = getMaxThreadsCount(ns, host, ns.getScriptRam(filename))
@@ -43,7 +43,7 @@ const defaultThreadsDistribution: Readonly<ThreadsDistribution> = {
 }
 
 function getBatchRamRequirements(ns: NS, { hack, weaken1, grow, weaken2 }: ThreadsDistribution): number {
-    return ns.getScriptRam('hack.js') * hack + ns.getScriptRam('weaken.js') * (weaken1 + weaken2) + ns.getScriptRam('grow.js') * grow
+    return ns.getScriptRam('hack.ts') * hack + ns.getScriptRam('weaken.ts') * (weaken1 + weaken2) + ns.getScriptRam('grow.ts') * grow
 }
 
 /**
@@ -59,10 +59,10 @@ async function hwgw(
     baseThreads: ThreadsDistribution = structuredClone(defaultThreadsDistribution)
 ) {
     const executionQueue = [
-        { filename: 'hack.js', name: 'hack', time: ns.getHackTime(targetHost), i: 0 },
-        { filename: 'weaken.js', name: 'weaken1', time: ns.getWeakenTime(targetHost), i: 1 },
-        { filename: 'grow.js', name: 'grow', time: ns.getGrowTime(targetHost), i: 2 },
-        { filename: 'weaken.js', name: 'weaken2', time: ns.getWeakenTime(targetHost), i: 3 }
+        { filename: 'hack.ts', name: 'hack', time: ns.getHackTime(targetHost), i: 0 },
+        { filename: 'weaken.ts', name: 'weaken1', time: ns.getWeakenTime(targetHost), i: 1 },
+        { filename: 'grow.ts', name: 'grow', time: ns.getGrowTime(targetHost), i: 2 },
+        { filename: 'weaken.ts', name: 'weaken2', time: ns.getWeakenTime(targetHost), i: 3 }
     ]
 
     const longestTime = Math.max(...executionQueue.map(x => x.time))
@@ -287,7 +287,7 @@ const args: Args = {
 }
 
 let log: Logger
-const filenames = ['hack.js', 'weaken.js', 'grow.js']
+const filenames = ['hack.ts', 'weaken.ts', 'grow.ts']
 const sourceHost = 'home'
 const schema = [['d', 3], ['r', 4], ['target', ''], ['deplete', false]] as const
 
@@ -412,10 +412,10 @@ async function hwgwWaterfall(
     // hack -> weaken -> grow -> weaken
     const delay = 50
     const executionQueue = [
-        { filename: 'hack.js', name: 'hack', time: Math.ceil(ns.getHackTime(targetHost)), i: 0 },
-        { filename: 'weaken.js', name: 'weaken1', time: Math.ceil(ns.getWeakenTime(targetHost)), i: 1 },
-        { filename: 'grow.js', name: 'grow', time: Math.ceil(ns.getGrowTime(targetHost)), i: 2 },
-        { filename: 'weaken.js', name: 'weaken2', time: Math.ceil(ns.getWeakenTime(targetHost)), i: 3 }
+        { filename: 'hack.ts', name: 'hack', time: Math.ceil(ns.getHackTime(targetHost)), i: 0 },
+        { filename: 'weaken.ts', name: 'weaken1', time: Math.ceil(ns.getWeakenTime(targetHost)), i: 1 },
+        { filename: 'grow.ts', name: 'grow', time: Math.ceil(ns.getGrowTime(targetHost)), i: 2 },
+        { filename: 'weaken.ts', name: 'weaken2', time: Math.ceil(ns.getWeakenTime(targetHost)), i: 3 }
     ].sort((a, b) => b.time - a.time)
 
     const longestTime = Math.max(...executionQueue.map(x => x.time))
@@ -476,7 +476,7 @@ async function hwgwWaterfall(
         baseThreads.grow = 0
     }
 
-    const baseRamReq = ns.getScriptRam('hack.js') * baseThreads.hack + ns.getScriptRam('weaken.js') * (baseThreads.weaken1 + baseThreads.weaken2) + ns.getScriptRam('grow.js') * baseThreads.grow
+    const baseRamReq = ns.getScriptRam('hack.ts') * baseThreads.hack + ns.getScriptRam('weaken.ts') * (baseThreads.weaken1 + baseThreads.weaken2) + ns.getScriptRam('grow.ts') * baseThreads.grow
     const startTime = Date.now()
 
     ns.write('log.txt', `INFO: Batch parameters ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}:\n`)

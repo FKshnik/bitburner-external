@@ -13,7 +13,7 @@ export async function main(ns: NS) {
         ns.tprint(`> run ${ns.getScriptName()} n00dles`)
         return;
     }
-    ns.tail();
+    ns.ui.openTail();
     ns.disableLog('ALL');
     // eslint-disable-next-line no-constant-condition
     while (true) {

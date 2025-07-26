@@ -1,8 +1,11 @@
 {
   "allowedFiletypes": [
-    ".js",
+    ".ts",
     ".script",
     ".txt"
+  ],
+  "ignoredDirectories": [
+    "lib"
   ],
   "allowDeletingFiles": true,
   "port": 42069,
