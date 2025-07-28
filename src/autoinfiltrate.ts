@@ -53,11 +53,10 @@ const infiltrationGames = [
     {
         name: "type it",
         init: function (screen: Element) {
-            const lines: string[] = getLines(getEl(screen, "p"));
+            const lines = getLines(getEl(screen, "p"));
             state.game.data = lines[0].split("");
         },
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        play: function (screen: Element) {
+        play: function (_screen: Element) {
             if (!state.game.data || !(state.game.data as string[]).length) {
                 delete state.game.data;
                 return;
@@ -72,8 +71,7 @@ const infiltrationGames = [
             const lines = getLines(getEl(screen, "p"));
             state.game.data = lines[0].split("");
         },
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        play: function (screen: Element) {
+        play: function (_screen: Element) {
             if (!state.game.data || !(state.game.data as string[]).length) {
                 delete state.game.data;
                 return;
@@ -84,54 +82,31 @@ const infiltrationGames = [
     },
     {
         name: "enter the code",
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        init: function (screen: Element) {
+        init: function (_screen: Element) { },
+        play: function (screen: Element) {
             const h4 = getEl(screen, "h4");
             const spanElements = h4[1].querySelectorAll("span");
+            // Adjust for SoA - Trickery of Hermes augmentation
+            // Use the "style" attribute to identify the current code instead of its content
             const code = Array.from(spanElements)
-                .map(span => span.textContent!)
+                .filter(span => !span.attributes.getNamedItem('style') || !span.attributes.getNamedItem('style')?.value)
+                .map(span => span.textContent)
+                .pop();
 
-            if (!code.includes('?')) {
-                state.game.augmented = 'true'
-                state.game.data = code
+            switch (code) {
+                case "↑":
+                    pressKey("w");
+                    break;
+                case "↓":
+                    pressKey("s");
+                    break;
+                case "←":
+                    pressKey("a");
+                    break;
+                case "→":
+                    pressKey("d");
+                    break;
             }
-        },
-        play: function (screen: Element) {
-            function resolve(code: string) {
-                switch (code) {
-                    case "↑":
-                        pressKey("w");
-                        break;
-                    case "↓":
-                        pressKey("s");
-                        break;
-                    case "←":
-                        pressKey("a");
-                        break;
-                    case "→":
-                        pressKey("d");
-                        break;
-                }
-            }
-
-            if (state.game.augmented && (!state.game.data || !(state.game.data as string[]).length)) {
-                delete state.game.data
-                delete state.game.augmented
-                return
-            }
-
-            if (!state.game.augmented) {
-                const h4 = getEl(screen, "h4");
-                const spanElements = h4[1].querySelectorAll("span");
-                const code = Array.from(spanElements)
-                    .filter(span => span.textContent !== "?")
-                    .map(span => span.textContent!)
-                    .pop()!;
-
-                resolve(code)
-            }
-            else
-                resolve((state.game.data as string[]).shift()!)
         },
     },
     {
@@ -155,8 +130,7 @@ const infiltrationGames = [
                 }
             }
         },
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        play: function (screen: Element) {
+        play: function (_screen: Element) {
             if (!state.game.data || !(state.game.data as string[]).length) {
                 delete state.game.data;
                 return;
@@ -166,52 +140,32 @@ const infiltrationGames = [
         },
     },
     {
-        name: "attack when his guard is down",
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        init: function (screen: Element) {
+        name: "guarding", // attack when his guard is down
+        init: function (_screen: Element) {
             state.game.data = "wait";
         },
-        play: function (screen: Element) {
-            const data = getLines(getEl(screen, "h4"));
-
-            if ("attack" === state.game.data) {
-                pressKey(" ");
-                state.game.data = "done";
-            }
-
-            // Attack in next frame - instant attack sometimes
-            // ends in failure.
-            if ('wait' === state.game.data && -1 !== data.indexOf("Preparing?")) {
-                state.game.data = "attack";
-            }
+        play: function (_screen: Element) { /* do nothing */ },
+    },
+    {
+        name: "distracted", // attack when his guard is down
+        init: function (_screen: Element) {
+            state.game.data = "wait";
+        },
+        play: function (_screen: Element) {
+            pressKey(" ");
+            state.game.data = "done";
         },
     },
     {
-        name: "attack after the guard drops his guard and is distracted",
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        init: function (screen: Element) {
+        name: "alerted", // attack when his guard is down
+        init: function (_screen: Element) {
             state.game.data = "wait";
         },
-        play: function (screen: Element) {
-            const data = getLines(getEl(screen, "h4"));
-            // console.log('h4 for slash: ', data)
-
-            if ("attack" === state.game.data) {
-                pressKey(" ");
-                state.game.data = "done";
-            }
-
-            // Attack in next frame - instant attack sometimes
-            // ends in failure.
-            if ('wait' === state.game.data && -1 !== data.indexOf("Distracted!")) {
-                state.game.data = "attack";
-            }
-        },
+        play: function (_screen: Element) { /* do nothing */ },
     },
     {
         name: "say something nice about the guard",
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        init: function (screen: Element) { },
+        init: function (_screen: Element) { },
         play: function (screen: Element) {
             const correct = [
                 "affectionate",
@@ -293,20 +247,17 @@ const infiltrationGames = [
                 }
             }
         },
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        play: function (screen: Element) { },
+        play: function (_screen: Element) { },
     },
     {
         name: "mark all the mines",
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        init: function (screen: Element) {
+        init: function (_screen: Element) {
             state.game.x = 0;
             state.game.y = 0;
             state.game.cols = (state.game.data as boolean[][])[0].length;
             state.game.dir = 1;
         },
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        play: function (screen: Element) {
+        play: function (_screen: Element) {
             let x = state.game.x as number;
             let y = state.game.y as number;
             let dir = state.game.dir as number
@@ -340,7 +291,7 @@ const infiltrationGames = [
         init: function (screen: Element) {
             const data = getLines(getEl(screen, "h5 span"));
             const rows = getLines(getEl(screen, "p"));
-            const keypad: string[][] = [];
+            const keypad = [] as string[][];
             const targets = [];
             let gridSize = null;
             switch (rows.length) {
@@ -396,8 +347,7 @@ const infiltrationGames = [
             state.game.x = 0;
             state.game.y = 0;
         },
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        play: function (screen: Element) {
+        play: function (_screen: Element) {
             const target = (state.game.data as number[][])[0];
             let { x, y } = { x: state.game.x as number, y: state.game.y as number };
 
@@ -507,8 +457,7 @@ const infiltrationGames = [
             // new Set() removes duplicate elements.
             state.game.data = [...new Set(wires)];
         },
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        play: function (screen: Element) {
+        play: function (_screen: Element) {
             const wire = state.game.data as number[];
             //state.game.data.shift();
             if (!wire) {
@@ -547,50 +496,36 @@ export async function main(ns: NS) {
 
     if (wnd.tmrAutoInf) {
         print("Stopping automated infiltration...");
-        clearTimeout(wnd.tmrAutoInf);
+        clearInterval(wnd.tmrAutoInf);
         delete wnd.tmrAutoInf;
     }
-
-    endInfiltration();
 
     if (args.stop) {
         return;
     }
 
     print(
-        "Automated infiltration is enabled...\nVWhen you visit the infiltration screen of any company, all tasks are completed automatically."
+        "Automated infiltration is enabled...\nWhen you visit the infiltration screen of any company, all tasks are completed automatically."
     );
 
+    endInfiltration();
 
     // Monitor the current screen and start infiltration once a
     // valid screen is detected.
-    wnd.tmrAutoInf = setTimeout(async function loop() { await infLoop(); wnd.tmrAutoInf = setTimeout(loop, speed); }, speed);
+    wnd.tmrAutoInf = setInterval(infLoop, speed);
 
     // Modify the addEventListener logic.
     wrapEventListeners();
-
-    const alertText = 'Press any key.'
-    while (TrustedKeyPress.length === 0) {
-        ns.alert(alertText)
-        for (const alert of doc.querySelectorAll('div[role=presentation]')) {
-            if (alert.children[2].lastChild!.textContent !== alertText)
-                continue
-
-            alertBox.button = alert.children[2].firstChild! as HTMLButtonElement
-            alertBox.button.style.display = 'none'
-        }
-        await ns.sleep(100)
-    }
 }
 
 /**
  * The infiltration loop, which is called at a rapid interval
  */
-async function infLoop() {
+function infLoop() {
     if (!state.started) {
         waitForStart();
     } else {
-        await playGame();
+        playGame();
     }
 }
 
@@ -621,9 +556,12 @@ function getEl(parent: Element | Document | string, selector?: string) {
     // selector = selector.split(",");
     // selector = selector.map((item) => `${prefix} ${item}`);
     // selector = selector.join(",");
-    selector = selector?.split(',').map((item) => `${prefix} ${item}`).join(',')
+    selector = selector?.split(',')
+        .map((item) => `${prefix} ${item}`)
+        .join(',')
 
-    return parent.querySelectorAll(selector || '');
+
+    return (parent as Element).querySelectorAll(selector || '');
 }
 
 /**
@@ -650,7 +588,7 @@ function filterByText(elements: NodeListOf<Element>, text: string) {
  * @returns {string[]}
  */
 function getLines(elements: NodeListOf<Element> | Element[] | never[]) {
-    const lines: string[] = [];
+    const lines = [] as string[];
     elements.forEach((el) => lines.push(el.textContent!));
 
     return lines;
@@ -735,7 +673,7 @@ function waitForStart() {
 /**
  * Identify the current infiltration game.
  */
-async function playGame() {
+function playGame() {
     const screens = doc.querySelectorAll(".MuiContainer-root");
 
     if (!screens.length) {
@@ -754,8 +692,7 @@ async function playGame() {
         return;
     }
 
-    const tempTitle = h4[0].textContent!.trim().toLowerCase().split(/[!.(]/)[0]
-    const title = ['distracted', 'guarding ', 'alerted'].includes(tempTitle) ? "attack after the guard drops his guard and is distracted" : tempTitle;
+    const title = h4[0].textContent!.trim().toLowerCase().split(/[!.(]/)[0];
 
     if ("infiltration successful" === title) {
         endInfiltration();
@@ -780,9 +717,6 @@ async function playGame() {
     }
 }
 
-const TrustedKeyPress: KeyboardEvent[] = []
-const alertBox: { button?: HTMLButtonElement } = {}
-
 /**
  * Wrap all event listeners with a custom function that injects
  * the "isTrusted" flag.
@@ -794,65 +728,41 @@ function wrapEventListeners() {
     if (!doc._addEventListener) {
         doc._addEventListener = doc.addEventListener;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/ban-types
         doc.addEventListener = function <K extends keyof DocumentEventMap>(type: K, callback: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions) {
             if ("undefined" === typeof options) {
                 options = false;
             }
-            // eslint-disable-next-line @typescript-eslint/ban-types
-            let handler: undefined | EventListenerOrEventListenerObject = undefined
+            let handler: undefined | EventListenerOrEventListenerObject = undefined;
 
             // For this script, we only want to modify "keydown" events.
             if ("keydown" === type) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 handler = function (...args: any[]) {
                     if (!args[0].isTrusted) {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        const hackedEv: Record<string, any> = {};
+                        const hackedEv: Record<string, boolean> = {};
 
                         for (const key in args[0]) {
                             if ("isTrusted" === key) {
                                 hackedEv.isTrusted = true;
-                            } else if ("function" === typeof args[0][key as keyof typeof args[0]]) {
-                                hackedEv[key] = args[0][key as keyof typeof args[0]].bind(args[0]);
+                            } else if ("function" === typeof args[0][key]) {
+                                hackedEv[key] = args[0][key].bind(args[0]);
                             } else {
-                                hackedEv[key] = args[0][key as keyof typeof args[0]];
+                                hackedEv[key] = args[0][key];
                             }
                         }
 
-                        (TrustedKeyPress[0] as { key: string }).key = args[0].key;
-                        (TrustedKeyPress[0] as { keyCode: number }).keyCode = args[0].keyCode;
-
-                        args[0] = TrustedKeyPress[0]
-                        if (!args[0]) {
-                            args[0] = hackedEv;
-                            console.error('You have to press any key at least once!')
-                        }
+                        Object.setPrototypeOf(hackedEv, KeyboardEvent.prototype);
+                        args[0] = hackedEv;
                     }
-                    else if (TrustedKeyPress.length === 0) {
-                        TrustedKeyPress.push(Object.defineProperties(args[0], {
-                            'key': { writable: true },
-                            'keyCode': { writable: true }
-                        }))
 
-                        if (alertBox.button) {
-                            alertBox.button.style.display = ''
-                            alertBox.button.click()
-                        }
-                        else
-                            console.log('alertBox.button is undefined. wth??')
-                    }
-                    return (callback as EventListener).apply(callback, args as [ev: Event])
+                    return (callback as EventListener).apply(callback, args as [ev: Event]);
                 };
 
                 for (const prop in callback) {
                     if ("function" === typeof callback[prop as keyof typeof callback]) {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        (handler! as any)[prop as keyof typeof handler] = (callback as any)[prop as keyof typeof callback].bind(callback);
-                        // handler = Object.assign({}, callback)
+                        (handler[prop as keyof typeof handler] as CallableFunction) = (callback[prop as keyof typeof callback] as CallableFunction).bind(callback);
                     } else {
-                        // handler[prop as keyof typeof handler] = callback[prop];
-                        handler = Object.assign({}, callback)
+                        handler[prop as keyof typeof handler] = callback[prop as keyof typeof callback];
                     }
                 }
             }
