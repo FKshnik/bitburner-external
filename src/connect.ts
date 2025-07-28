@@ -28,6 +28,10 @@ export async function main(ns: NS) {
         if (currentHost.name === ns.args[0]) {
             const path: string[] = getPath(currentHost)
             ns.tprint(`Path to '${ns.args[0]}': ${path.join(' -> ')}`)
+
+            for (const host of path)
+                ns.singularity.connect(host)
+
             return
         }
 
