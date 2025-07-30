@@ -44,6 +44,16 @@ export async function backdoor(ns: NS, ...servers: string[]) {
             continue
         }
 
+        if (ns.getServer(hostname).backdoorInstalled === undefined) {
+            ns.tprint(error(`Server '${hostname}': BackdoorInstalled flag is undefined?`))
+            continue
+        }
+
+        if (ns.getServer(hostname).backdoorInstalled === true) {
+            ns.tprint(`Backdoor on server '${hostname}' is already installed.`)
+            continue
+        }
+
         if (ns.getServerRequiredHackingLevel(hostname) > ns.getHackingLevel()) {
             ns.tprint(error(`Cannot backdoor server '${hostname}': hacking level is too low (required: ${ns.getServerRequiredHackingLevel(hostname)}).`))
             continue
@@ -59,6 +69,8 @@ export async function backdoor(ns: NS, ...servers: string[]) {
         connect(ns, hostname)
         await ns.singularity.installBackdoor()
         connect(ns, 'home')
+
+        ns.tprint(`Successfully installed backdoor on server '${hostname}'.`)
     }
 }
 
