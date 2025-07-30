@@ -17,8 +17,17 @@ export async function main(ns: NS) {
         return
     }
 
-    const path: string[] = getPathToServer(ns, ns.args[0] as string)
-    ns.tprint(`Path to '${ns.args[0]}': ${path.join(' -> ')}`)
+    connect(ns, ns.args[0] as string)
+}
+
+export function connect(ns: NS, hostname: string) {
+    if (hostname === 'home') {
+        ns.singularity.connect(hostname)
+        return
+    }
+
+    const path: string[] = getPathToServer(ns, hostname)
+    ns.tprint(`Path to '${hostname}': ${path.join(' -> ')}`)
 
     for (const host of path)
         ns.singularity.connect(host)
