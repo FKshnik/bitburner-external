@@ -17,6 +17,14 @@ export async function main(ns: NS) {
         return
     }
 
+    const path: string[] = getPathToServer(ns, ns.args[0] as string)
+    ns.tprint(`Path to '${ns.args[0]}': ${path.join(' -> ')}`)
+
+    for (const host of path)
+        ns.singularity.connect(host)
+}
+
+export function getPathToServer(ns: NS, hostname: string) {
     const visited: Set<string> = new Set()
     const stack: Host[] = []
     stack.push({ name: 'home' })
@@ -25,21 +33,16 @@ export async function main(ns: NS) {
         const currentHost = stack.pop()!
         visited.add(currentHost.name)
 
-        if (currentHost.name === ns.args[0]) {
-            const path: string[] = getPath(currentHost)
-            ns.tprint(`Path to '${ns.args[0]}': ${path.join(' -> ')}`)
-
-            for (const host of path)
-                ns.singularity.connect(host)
-
-            return
-        }
+        if (currentHost.name === hostname)
+            return getPath(currentHost)
 
         for (const host of ns.scan(currentHost.name)) {
             if (!visited.has(host))
                 stack.push({ name: host, parent: currentHost })
         }
     }
+
+    throw `Unreachable getPathToServer(), hostname: ${hostname}`
 }
 
 function getPath(host?: Host) {
